@@ -1,0 +1,49 @@
+digraph articles {
+    graph [label = "Articles View", labelloc = t];
+
+    list_view[peripheries = 3];
+    add_view[peripheries = 2];
+    edit_view[peripheries = 2];
+    500[peripheries = 2];
+
+    add[style = filled];
+    edit[style = filled];
+    delete[style = filled];
+    validation[style = filled];
+    update[style = filled];
+    save[style = filled];
+    read[style = filled];
+
+    list_view -> add [label = "Click add button"];
+    add -> add_view;
+    add_view -> update [label = "Click save button"];
+
+    list_view -> edit [label = "Click edit button"];
+    edit_view -> update [label = "Click save button"];
+
+    subgraph cluster_edit {
+        label = "Edit";
+        edit -> read;
+    }
+
+    read -> edit_view [label = "Success"];
+    read -> 500 [label = "Database error"];
+
+    list_view -> confirm_delete [label = "Show alert"];
+    confirm_delete -> list_view [label = "Cancel"];
+    confirm_delete -> delete [label = "OK"];
+    delete -> list_view [label = "Success"];
+    delete -> 500 [label = "Database error"];
+
+    subgraph cluster_model {
+        label = "Model";
+        update -> validation;
+        validation -> save [label = "Success"];
+    }
+
+    validation -> add_view [label = "Validation error"];
+    validation -> edit_view [label = "Validation error"];
+    save -> add_view [label = "Success"];
+    save -> edit_view [label = "Success"];
+    save -> 500 [label = "Database error"];
+}
