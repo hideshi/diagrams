@@ -1,4 +1,4 @@
-digraph registration{
+digraph registration {
     // Graph Settings
     graph[label="User Registration",labelloc=t,fontsize=18];
 
