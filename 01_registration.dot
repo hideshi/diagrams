@@ -1,0 +1,143 @@
+digraph registration{
+    // Graph Settings
+    graph[label="User Registration",labelloc=t,fontsize=18];
+
+    // Define Views
+    top_view[peripheries=3,label="Top /"];
+
+    registration_view[peripheries=2,label="Register User /user/register"];
+    confirm_view[peripheries=2,label="Confirm User /user/confirm"];
+    sent_activation_email_view[peripheries=2,label="Sent Activation Email /user/sent_activation_email"];
+    email_activation_view[peripheries=2,label="Receive Activation Email on Your Email App"];
+    activated_view[peripheries=2,label="User Activated /user/activated"];
+    activation_code_expired_view[peripheries=2,label="Activation Code Expired /user/activation_code_expired"];
+
+    forgot_password_view[peripheries=2,label="Forgot Password /user/forgot_password"];
+    sent_reset_password_email_view[peripheries=2,label="Sent Reset Password Email /user/sent_reset_password_email"];
+    email_reset_password_view[peripheries=2,label="Receive Reset Password Email on Your Email App"];
+    input_new_password[peripheries=2,label="Input New Password /user/input_new_password"];
+    reset_password_code_expired_view[peripheries=2,label="Reset Password Code Expired /user/reset_password_code_expired"];
+    completed_resetting_password[peripheries=2,label="Completed Resetting Password /user/completed_resetting_password"];
+
+    login_view[peripheries=2,label="Login /user/login"];
+
+    dashboard_view[peripheries=2,label="Dashborad /dashboard"];
+
+    server_error[peripheries=2,label="Server Error /system/server_error"];
+
+    // Define Screen Transitions
+    top_view->registration_view[style=dashed];
+    registration_view->confirm_view[style=dashed];
+    confirm_view->sent_activation_email_view[style=dashed];
+    sent_activation_email_view->email_activation_view[style=dashed];
+    email_activation_view->activated_view[style=dashed];
+    email_activation_view->activation_code_expired_view[style=dashed];
+
+    top_view->forgot_password_view[style=dashed];
+    forgot_password_view->sent_reset_password_email_view[style=dashed];
+    sent_reset_password_email_view->email_reset_password_view[style=dashed];
+    email_reset_password_view->input_new_password[style=dashed];
+    email_reset_password_view->reset_password_code_expired_view[style=dashed];
+    input_new_password->completed_resetting_password[style=dashed];
+
+    top_view->login_view[style=dashed];
+    login_view->dashboard_view[style=dashed];
+
+    // Define Styles of Server Side Processes
+    // Register User and Activate
+    "GET /user/register"[style=filled];
+    "POST /user/confirm"[style=filled];
+    validate_inputted_user[style=filled];
+    set_inputted_user_on_session[style=filled];
+    "GET /user/sent_activation_email"[style=filled];
+    restore_inputted_user_from_session[style=filled];
+    generate_activation_code[style=filled];
+    save_user[style=filled];
+    send_activation_email[style=filled];
+    save_as_activated[style=filled];
+    "GET /user/activated"[style=filled];
+    validate_activation_code[style=filled];
+
+    // Reset Password
+    "GET /user/forgot_password"[style=filled];
+    validate_inputted_email[style=filled];
+    generate_reset_password_code[style=filled];
+    save_reset_password_code[style=filled];
+    send_reset_password_email[style=filled];
+    validate_reset_password_code[style=filled];
+    validate_password[style=filled];
+    save_password[style=filled];
+    "POST /user/sent_reset_password_email"[style=filled];
+    "GET /user/input_new_password"[style=filled];
+    "POST /user/completed_resetting_password"[style=filled];
+
+    // Login
+    "GET /user/login"[style=filled];
+    "POST /user/authentication"[style=filled];
+
+    // Define Server Side Processes
+    // Register User and Activate
+    top_view->"GET /user/register"[label="Click register user button"];
+    "GET /user/register"->registration_view;
+    registration_view->"POST /user/confirm"[label="Click submit button"];
+    "POST /user/confirm"->validate_inputted_user;
+    validate_inputted_user->set_inputted_user_on_session[label="Valid"];
+    validate_inputted_user->registration_view[label="Invalid"];
+    set_inputted_user_on_session->confirm_view;
+    confirm_view->"GET /user/sent_activation_email"[label="Click submit button"];
+    subgraph cluster_register_user {
+        label="Save User and Send Activation Email";
+        "GET /user/sent_activation_email"->restore_inputted_user_from_session;
+        restore_inputted_user_from_session->generate_activation_code
+        generate_activation_code->save_user;
+        send_activation_email->send_activation_email[label="Error and Retry"];
+    }
+    save_user->send_activation_email[label="Success"];
+    save_user->server_error[label="Database error"];
+    send_activation_email->sent_activation_email_view[label="Success"];
+    email_activation_view->"GET /user/activated"[label="Click activation link"];
+    subgraph cluster_activate {
+        label="Activate Registered User";
+        "GET /user/activated"->validate_activation_code;
+        validate_activation_code->save_as_activated[label="Valid"];
+    }
+    validate_activation_code->activation_code_expired_view[label="Error"];
+    save_as_activated->activated_view[label="Success"];
+    save_as_activated->server_error[label="Database error"];
+
+    // Reset Password
+    top_view->"GET /user/forgot_password";
+    "GET /user/forgot_password"->forgot_password_view;
+    forgot_password_view->"POST /user/sent_reset_password_email";
+    "POST /user/sent_reset_password_email"->validate_inputted_email;
+    subgraph cluster_generate_reset_password_code {
+        label="Reset Password";
+        validate_inputted_email->generate_reset_password_code[label="Valid"];
+        generate_reset_password_code->save_reset_password_code;
+        save_reset_password_code->send_reset_password_email;
+    }
+    validate_inputted_email->forgot_password_view[label="Invalid"];
+    send_reset_password_email->sent_reset_password_email_view[label="Success"];
+    send_reset_password_email->send_reset_password_email[label="Error and Retry"];
+    email_reset_password_view->"GET /user/input_new_password";
+    subgraph cluster_reset_password {
+        "GET /user/input_new_password"->validate_reset_password_code
+    }
+    validate_reset_password_code->input_new_password[label="Valid"];
+    validate_reset_password_code->reset_password_code_expired_view[label="Invalid"];
+    input_new_password->"POST /user/completed_resetting_password";
+    subgraph cluster_completed_resetting_password {
+        "POST /user/completed_resetting_password"->validate_password;
+        validate_password->save_password[label="Valid"];
+    }
+    validate_password->input_new_password[label="Invalid"];
+    save_password->completed_resetting_password[label="Success"];
+    save_password->server_error[label="Database error"];
+
+    // Login
+    top_view->"GET /user/login";
+    "GET /user/login"->login_view;
+    login_view->"POST /user/authentication";
+    "POST /user/authentication"->dashboard_view[label="Success"];
+    "POST /user/authentication"->login_view[label="Fail"];
+}
