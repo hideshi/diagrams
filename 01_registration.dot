@@ -80,8 +80,11 @@ digraph registration{
     top_view->"GET /user/register"[label="Click register user button"];
     "GET /user/register"->registration_view;
     registration_view->"POST /user/confirm"[label="Click submit button"];
-    "POST /user/confirm"->validate_inputted_user;
-    validate_inputted_user->set_inputted_user_on_session[label="Valid"];
+    subgraph cluster_confirm_registration {
+        label="Confirm Registration";
+        "POST /user/confirm"->validate_inputted_user;
+        validate_inputted_user->set_inputted_user_on_session[label="Valid"];
+    }
     validate_inputted_user->registration_view[label="Invalid"];
     set_inputted_user_on_session->confirm_view;
     confirm_view->"GET /user/sent_activation_email"[label="Click submit button"];
@@ -109,9 +112,9 @@ digraph registration{
     top_view->"GET /user/forgot_password";
     "GET /user/forgot_password"->forgot_password_view;
     forgot_password_view->"POST /user/sent_reset_password_email";
-    "POST /user/sent_reset_password_email"->validate_inputted_email;
     subgraph cluster_generate_reset_password_code {
-        label="Reset Password";
+        label="Generate Reset Password Code";
+        "POST /user/sent_reset_password_email"->validate_inputted_email;
         validate_inputted_email->generate_reset_password_code[label="Valid"];
         generate_reset_password_code->save_reset_password_code;
         save_reset_password_code->send_reset_password_email;
@@ -121,12 +124,14 @@ digraph registration{
     send_reset_password_email->send_reset_password_email[label="Error and Retry"];
     email_reset_password_view->"GET /user/input_new_password";
     subgraph cluster_reset_password {
+        label="Reset Password";
         "GET /user/input_new_password"->validate_reset_password_code
     }
     validate_reset_password_code->input_new_password[label="Valid"];
     validate_reset_password_code->reset_password_code_expired_view[label="Invalid"];
     input_new_password->"POST /user/completed_resetting_password";
     subgraph cluster_completed_resetting_password {
+        label="Completed Resetting Password";
         "POST /user/completed_resetting_password"->validate_password;
         validate_password->save_password[label="Valid"];
     }
