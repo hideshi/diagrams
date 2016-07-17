@@ -1,49 +1,51 @@
 digraph crud {
-    graph [label = "CRUD View", labelloc = t];
+    graph[label="CRUD View",labelloc=t];
 
-    list_view[peripheries = 3];
-    add_view[peripheries = 2];
-    edit_view[peripheries = 2];
-    server_error[peripheries = 2];
+    list_view[peripheries=3];
+    add_view[peripheries=2];
+    edit_view[peripheries=2];
+    server_error[peripheries=2];
 
-    add[style = filled];
-    edit[style = filled];
-    delete[style = filled];
-    validation[style = filled];
-    update[style = filled];
-    save[style = filled];
-    read[style = filled];
+    list_view->add_view[style=dashed];
+    list_view->edit_view[style=dashed];
+    add_view->server_error[style=dashed];
+    edit_view->server_error[style=dashed];
 
-    list_view -> add [label = "Click add button"];
-    add -> add_view;
-    add_view -> update [label = "Click save button"];
+    "GET /xxx/add"[style=filled];
+    "POST /xxx/add"[style=filled];
+    "GET /xxx/edit"[style=filled];
+    "POST /xxx/edit"[style=filled];
+    "POST /xxx/delete"[style=filled];
+    validation[style=filled];
+    save[style=filled];
+    read[style=filled];
 
-    list_view -> edit [label = "Click edit button"];
-    edit_view -> update [label = "Click save button"];
+    list_view->"GET /xxx/add"[label="Click edit button"];
+    "GET /xxx/add"->add_view;
 
+    add_view->"POST /xxx/add"[label="Click submit button"];
+    subgraph cluster_update {
+        label="Update";
+        "POST /xxx/add"->validation;
+        "POST /xxx/edit"->validation;
+        validation->save[label="Valid"];
+    }
+    validation->add_view[label="Invalid"];
+    save->add_view[label="Success"];
+    save->server_error[label="Database error"];
+
+    list_view->"GET /xxx/edit"[label="Click edit button"];
     subgraph cluster_edit {
-        label = "Edit";
-        edit -> read;
+        label="Edit";
+        "GET /xxx/edit"->read;
     }
+    read->edit_view[label="Success"];
+    read->server_error[label="Database error"];
 
-    read -> edit_view [label = "Success"];
-    read -> server_error [label = "Database error"];
+    edit_view->"POST /xxx/edit"[label="Click submit button"];
+    validation->edit_view[label="Invalid"];
+    save->edit_view[label="Success"];
 
-    list_view -> confirm_delete [label = "Show alert"];
-    confirm_delete -> list_view [label = "Cancel"];
-    confirm_delete -> delete [label = "OK"];
-    delete -> list_view [label = "Success"];
-    delete -> server_error [label = "Database error"];
-
-    subgraph cluster_save {
-        label = "Model";
-        update -> validation;
-        validation -> save [label = "Valid"];
-    }
-
-    validation -> add_view [label = "Invalid"];
-    validation -> edit_view [label = "Invalid"];
-    save -> add_view [label = "Success"];
-    save -> edit_view [label = "Success"];
-    save -> server_error [label = "Database error"];
+    list_view->"POST /xxx/delete"[label="Click delete button"];
+    "POST /xxx/delete"->list_view;
 }
